@@ -90,4 +90,248 @@ function ExpenseItem() {
 export default ExpenseItem;
 ```
 
-className은 class가 아니지만, 리액트에서 자동으로 class로 등록해주기 때문에
+className은 class가 아니지만, 리액트에서 자동으로 class로 등록해준다
+
+## props
+
+props는 인자로서 컴포넌트에 정보를 전달하기 위해 사용되는 개념이다. 인자로 전달되는 props를 받기 위해 컴포넌트에서 매개변수를 선언해줘야 한다. 리액트 컴포넌트의 계층구조에서 상위 계층이 하위 계층으로 데이터를 전달할 때 props가 이용된다.
+
+```javascript
+function App() {
+  const expenses = [
+    {
+      title: "Car Insurance",
+      date: new Date(2021, 2, 28),
+      amount: 313.32,
+    },
+    {
+      title: "MESPPP Insurance",
+      date: new Date(2021, 2, 28),
+      amount: 23.32,
+    },
+    {
+      title: "DSX DWW",
+      date: new Date(2021, 2, 28),
+      amount: 413.32,
+    },
+  ];
+  return (
+    <div className="App">
+      <h1>hello this is my new Project</h1>
+      <Expenses item={expenses} />
+      //props로 expenses를 전달함.
+    </div>
+  );
+}
+
+//expenses.js
+function Expenses(props) {
+  //expenses는 매개변수 선언으로 props를 전달받음.
+  return (
+    <Card className="expenses">
+      <ExpenseItem
+        title={props.item[0].title}
+        amount={props.item[0].amount}
+        date={props.item[0].date}
+      />
+      <ExpenseItem
+        title={props.item[1].title}
+        amount={props.item[1].amount}
+        date={props.item[1].date}
+      />
+      <ExpenseItem
+        title={props.item[2].title}
+        amount={props.item[2].amount}
+        date={props.item[2].date}
+      />
+    </Card>
+  );
+}
+```
+
+props 전달 시 HTMl의 태그 속성으로 사용자가 속성의 이름을 지정해 데이터를 전달한다. 예를 들어
+
+```
+<MyCom name={name} age=12 />
+```
+
+라고 할 때, MyCom에서 각각의 데이터를 활용하는 방안은 다음과 같다.
+
+```javascript
+function MyCom(props) {
+  console.log(props.name);
+  console.log(props.age);
+  return (
+    <div>
+      my name is {props.name} and age is {props.age}
+    </div>
+  );
+}
+```
+
+어떤 컴포넌트가 Wrapper컴포넌트로서의 역할을 할 경우, 즉 다른 컴포넌트들의 최상위부모가 되는 컴포넌트가 되는 경우 다음과 같은 작업이 필요하다.
+
+```javascript
+function Expenses(props) {
+  return (
+    <Card className="expenses">
+      <ExpenseItem
+        title={props.item[0].title}
+        amount={props.item[0].amount}
+        date={props.item[0].date}
+      />
+      <ExpenseItem
+        title={props.item[1].title}
+        amount={props.item[1].amount}
+        date={props.item[1].date}
+      />
+      <ExpenseItem
+        title={props.item[2].title}
+        amount={props.item[2].amount}
+        date={props.item[2].date}
+      />
+    </Card>
+  );
+}
+```
+
+현재 여기서 Card 컴포넌트가 Wrapper 컴포넌트이다. 이와 같이 Wrapper 컴포넌트로서 다른 여러 컴포넌트나 태그들을 포함할 경우, Wrapper 컴포넌트에서는 다음과 같은 별도의 설정이 필요하다.
+
+```javascript
+import "./Card.css";
+
+function Card(props) {
+  const classes = "card " + props.className;
+  return <div className={classes}>{props.children}</div>;
+}
+
+export default Card;
+```
+
+Card는 props로 전달받은 데이터가 없지만, 매개변수로 props로 지정하고, {props.children}을 명시해줘야 한다.
+
+### 이벤트 핸들링
+
+우리는 바닐라 자바스크립트에서 클릭 이벤트를 감지하고, 특정 함수를 호출하기 위해 `addEventListner` 를 사용했다. 리액트에서도 그러한 문법은 유효하지만, 다른 더 간편한 방법이 준비되어있다. 리엑트에서는 이벤트와 관련된 문법을 모두 on으로 시작하는 props명으로 준비했다. 따라서 어떤 태그나 컴포넌트에 클릭 이벤트 감지기를 추가하고 싶다면 props로 `onClick` 과 실행 함수를 전달하면 된다.
+
+```javascript
+function ExpenseItem(props) {
+  const clickMeHandler = () => {
+    console.log("햐이");
+  };
+  return (
+    <Card className="expense-item">
+      <button onClick={clickMeHandler}>click me</button>
+    </Card>
+  );
+}
+```
+
+버튼 클릭 시에 콘솔에 햐이라는 글자가 출력될 것이다.
+
+# useState
+
+onClick을 통해 특정 함수를 실행할 때, ui를 업데이트를 업데이트 할 수 있을까? 실제로 다음과 같이 코드를 작성하여도 ui는 업데이트 되지 않는다.
+
+```javascript
+function ExpenseItem(props) {
+  let title = props.title;
+  const clickMeHandler = () => {
+    title = "changed!";
+    //title을 동적으로 바꾸고자 시도하지만 ui는 업데이트 되지 않음
+    console.log("햐이");
+  };
+  return (
+    <Card className="expense-item">
+      <ExpenseDate date={props.date} />
+      <div className="expense-item__description">
+        <h2>{title}</h2>
+        <div className="expense-item__price">${props.amount}</div>
+      </div>
+      <button onClick={clickMeHandler}>click me</button>
+    </Card>
+  );
+}
+
+export default ExpenseItem;
+```
+
+그 이유는 컴포넌트가 함수이기 때문이다. 그리고 리액트는 해당 컴포넌트의 실행을 처음 index.html을 불러올 때 평가하고 실행한다. 따라서 ui가 업데이트 되기 위해서는 해당 컴포넌트가 재평가된 후 재실행 되어야 한다. 이것을 가능하게 하기 위해 도입된 개념이 State이다. State는 리액트에서 제공하는 여러가지 내장함수 중 하나로, 이러한 것들을 `훅` 이라고 부르며, 모든 훅은 use로 시작한다. 따라서 리액트에서 사용하는 state는 useState()이다.
+
+useState()는 ui업데이트와 관련있는 동적인 값을 저장하는 state(일반적인 변수와 다르다)와, 해당 변수의 값을 설정하는 setter함수를 리턴한다. 그리고 만약 setter함수를 통해 새로운 값을 설정하면, 해당 useState를 가지고 있는 컴포넌트가 재평가 후 재실행되어, 새로 설정한 값이 ui에 업데이트 된다.
+
+```javascript
+import { useState } from "react";
+//useState를 사용하기 위해서는 리액트 라이브러리에서 import해줘야 함.
+
+function ExpenseItem(props) {
+  const [title, setTitle] = useState(props.title);
+  //useState가 리턴하는 state와 setter를 모두 받기 위해
+  //구조 분해 할당으로 처리하는 것이 국룰이다.
+  const clickMeHandler = () => {
+    setTitle("changed!");
+  };
+  return (
+    <Card className="expense-item">
+      <ExpenseDate date={props.date} />
+      <div className="expense-item__description">
+        <h2>{title}</h2>
+        <div className="expense-item__price">${props.amount}</div>
+      </div>
+      <button onClick={clickMeHandler}>click me</button>
+    </Card>
+  );
+}
+```
+
+state와 변수가 다른 점은 만약 state가 저장되어있는 컴포넌트가 여러번 사용되었을 때, 각각의 호출되는 컴포넌트마다 state가 독립적으로 값을 관리한다.
+즉 첫 번째 컴포넌트의 버튼을 눌러서 첫 번째 컴포넌트의 title 글자만 바뀌고, 두 번째 컴포넌트의 title글자는 바뀌지 않게 한다.
+
+## prevState
+
+state가 변경될 때, 즉 setter함수가 실행되면, 해당 함수를 실행하는 컴포넌트는 리렌더링 되어 ui가 업데이트 된다. 문제는 해당 setter함수를 포함하고 있는 함수의 실행이 모두 종료되면 컴포넌트가 리렌더링 된다는 점이다. 따라서 해당 함수 안에 여러 setter함수를 실행시키고자 하면, 새로 업데이트 된 값을 이용하지 못하고 기존 값을 업데이트 하는 작업만 반복할 뿐이다. 다음의 예를 통해 이해해보자.
+
+```javascript
+  const [count, setCount] = useState(0);
+  const onClickCount = () => {
+    setCount( count + 1);
+    setCount( count + 1);
+        //아직 컴포넌트가 리랜더링 되지 않아서, 이전 값인 0에서 다시 1을 더한다.
+    setCount( count + 1);
+    setCount( count + 1);
+        //여전히 0에서 1을 더함으로, 최종 값은 4가 아닌 1이다.
+  };
+  return (
+    <div>
+      <div>현재카운트:{count}</div>
+      <button onClick={onClickCount}>카운트 올리기</button>
+    </div>
+  );
+};
+```
+
+따라서 컴포넌트가 리랜더링 되기 전에 미리 변경한 state값을 사용하는 방법은 다음과 같다.
+
+```javascript
+  const [count, setCount] = useState(0);
+  const onClickCount = () => {
+    setCount((count) => count + 1);
+    setCount((count) => count + 1);
+    setCount((count) => count + 1);
+    setCount((count) => count + 1);
+  };
+  return (
+    <div>
+      <button onClick={onClickCount}>+1</button>
+    </div>
+  );
+};
+```
+
+## 부모 관계로 데이터 전달
+
+위에서 설명했다시피, 리액트는 컴포넌트 트리를 구성한다. 그리고 부모 컴포넌트에서 자식 컴포넌트로 데이터를 전달하고 싶으면 props를 전달하면 된다. 그러면 자식은 어떻게 부모로 데이터를 전달하는가? 이때에도 props를 이용하지만, 정확히는 부모 컴포넌트에서 정의내리는, 매개변수는 자식 컴포넌트의 값을 수용하는 함수를 props로 전달하면 된다. 그렇게 하면 자식 컴포넌트에서는 props로 받은 부모컴포넌트의 함수를 실행하여 인자를 전달할 수 있기 때문이다.
+
+따라서 만약 당신이 형제 관계의 컴포넌트로 데이터를 전달하고 싶으면, 먼저 부모님에게 데이터를 전달한 뒤, 부모님보고 형제한테 전달해달라고 하면 된다.
+
+귀찮으니까 그냥 리덕스나 다른 편한 상태관리 프레임워크를 사용하면 된다.
