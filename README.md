@@ -335,3 +335,176 @@ state가 변경될 때, 즉 setter함수가 실행되면, 해당 함수를 실�
 따라서 만약 당신이 형제 관계의 컴포넌트로 데이터를 전달하고 싶으면, 먼저 부모님에게 데이터를 전달한 뒤, 부모님보고 형제한테 전달해달라고 하면 된다.
 
 귀찮으니까 그냥 리덕스나 다른 편한 상태관리 프레임워크를 사용하면 된다.
+
+# 투 두 리스트 만들기 - 리스트 다루기
+
+투-두를 기본적으로 객체로 다루고, 여러가지 객체(투-두)들을 배열에 담아서 활용한다. 배열은 useState로 선언하여, 배열에 값이 추가되거나 삭제될 때 ui가 업데이트 되도록 한다.
+
+배열에 기본값(기본적으로 저장되어 있는 객체)을 저장하고 싶을 때, 다음과 같이 분리해서 선언할 수 있다.
+
+```javascript
+const INITIAL_EXPENSE = [
+  {
+    title: "Car Insurance",
+    date: new Date(2021, 2, 28),
+    amount: 313.32,
+    id: 1,
+  },
+  {
+    title: "i wanna go home",
+    date: new Date(2021, 2, 28),
+    amount: 23.32,
+    id: 2,
+  },
+  {
+    title: "DSX DWW",
+    date: new Date(2021, 2, 28),
+    amount: 413.32,
+    id: 3,
+  },
+];
+
+function App() {
+  const [expenseData, setExpenseData] = useState(INITIAL_EXPENSE);
+
+```
+
+새로운 값을 추가할려면 useState의 setter함수를 이용해야 한다. 보통 데이터를 보여주는 컴포넌트와 데이터를 추가하는 컴포넌트는 서로 다른 컴포넌트로 분리하며, 해당 컴포넌트는 서로 형제관계인 경우가 많으므로, 부모 컴포넌트에서 state를 선언하고, 보여주는 컴포넌트에게는 state를 props로 전달하고, 추가하는 컴포넌트에는 setter함수를 props로 전달하면 된다.
+만약 기존 state에 새로운 값을 추가하는 경우라면 setter함수 안에 스프레드 연산자를 이용해서 state를 다시 넣어줘야 하기 때문에, 이러한 경우에는 부모 컴포넌트에서 stter함수를 실행하는 함수를 만들어 그 함수를 props로 전달하기도 한다.
+
+함수를 전달받은 아이템 추가 컴포넌트는 input창으로부터 사용자가 입력한 정보를 토대로 객체를 만들고, 그 객체를 전달받은 함수의 인자로 넘겨주면 새로운 아이템이 추가되어 Ui에 나타나도록 설계한다.
+
+이 과정에서 다음과 같은 코드 구성이 사용된다.
+
+```javascript
+  const onSaveExpenseData = (expense) => {
+    setExpenseData((prevExpense) => {
+      return [expense, ...prevExpense];
+      //스프레드 연산자를 통해 기존 state를 유지하고, 새로운 객체를 추가함.
+    });
+  };
+
+  return (
+    <div className="App">
+      <h1 className="mainTitle">hello this is my new Project</h1>
+      <NewExpense onSaveExpenseData={onSaveExpenseData} />
+//state배열에 객체를 추가하는 함수를 props를 전달함.
+      <Expenses item={expenseData} />
+    </div>
+  );
+}
+
+```
+
+```javascript
+  const [inputTitle, setTitleInput] = useState("");
+  const [inputDate, setDateInput] = useState("");
+  const [inputAmount, setAmountInput] = useState("");
+
+  const titleInputHandler = (e) => {
+    setTitleInput(e.target.value);
+  };
+//onChange가 감지되면, 해당 input창의 value를 state값으로 설정함.
+
+  const amountInputHandler = (e) => {
+    setAmountInput(e.target.value);
+  };
+
+  const dateInputHandler = (e) => {
+    setDateInput(e.target.value);
+  };
+
+
+...생략
+
+          <input
+            type="text"
+            onChange={titleInputHandler}
+//입력창의 값에 변화가 생기면, 지정 함수를 실행함.
+            value={inputTitle}
+            //입력창 초기화를 위함임. 지금은 보이지 않는 submit 버튼을 누르면
+//inputTitle 값이 공백이 됨. 따라서 input창도 초기화 됨.
+          ></input>
+        </div>
+        <div className="new-expense__control">
+          <label>Amount</label>
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            onChange={amountInputHandler}
+            value={inputAmount}
+            //입력창 초기화를 위함임.
+          ></input>
+        </div>
+        <div className="new-expense__control">
+          <label>Date</label>
+          <input
+            type="date"
+            min="2019-01-01"
+            max="2022-12-31"
+            onChange={dateInputHandler}
+            value={inputDate}
+            //입력창 초기화를 위함임.
+          ></input>
+```
+
+그리고 이런 입력창과 button 조합 구성은 form 태그로 감싸주는 것이 시맨틱하다. 하지만 문제는 button을 클릭했을 때 페이지가 리로드 된다. 그것을 막기 위해 다음과 같이 작성한다.
+
+```javascript
+//제출버튼을 클릭했을 실행되는 함수임.
+
+e.preventDefault();
+//form태그 안에 button태그가 존재하면 그것을 눌렀을 때 페이지가 리로드 되는데,
+//해당 함수를 실행하면 페이지가 리로드 되지 않음
+const expenseData = {
+  title: inputTitle,
+  amount: +inputAmount,
+  //+연산자를 사용하면 숫자로 형변환 된다.
+  date: new Date(inputDate),
+  id: Math.random(),
+};
+//입력값을 토대로 객체를 만든다.
+props.onSaveExpenseData(expenseData);
+//props로 전달 받은 객체 추가 함수에 인자로 새로 맏는 객체를 전달함.
+setTitleInput("");
+setAmountInput("");
+setDateInput("");
+//submit 후 입력창 초기화를 위함임.
+```
+
+# 필터
+
+javascript의 filter함수를 사용한다.
+
+```javascript
+const filteredExpenses = props.item.filter((expense) => {
+  return expense.date.getFullYear() === filterYear;
+});
+```
+
+내가 선택한 해의 객체만 보여주는 코드이다.
+
+# 조건부 내용 출력
+
+조건에 따라 보여지는 내용을 달리 하는 것이다. 프론트엔드 개발 시 거의 필수적으로 사용되는 방법이다.
+
+**삼항연산자 이용
+**
+
+```javascript
+<div className="new-expense">
+  {showAddExpenseForm ? (
+    <ExpenseForm
+      onSaveExpenseData={props.onSaveExpenseData}
+      newExpenseHandler={newExpenseHandler}
+    />
+  ) : (
+    <button onClick={newExpenseHandler}>Add New Expense</button>
+  )}
+</div>
+```
+
+showAddExpenseForm이라는 boolean값을 저장하는 state를 이용해 삼항연산자로 위와 같이 표현할 수 있다.
+
+또는 변수에 jsx구문을 저장하고, 조건문으로 변수의 내용을 달리할 수 있다. 즉, return 문 안에는 {변수이름} 이것만 넣고, return 위에 자바스크립트 코드 작성하는 곳에서 처리한다는 뜻이다.
